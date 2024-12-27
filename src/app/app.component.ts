@@ -1,4 +1,5 @@
 import { Component, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { interval, map } from 'rxjs';
 
 @Component({
@@ -9,24 +10,31 @@ import { interval, map } from 'rxjs';
 export class AppComponent implements OnInit {
   clickCount = signal(0);  //  a signal initialized with a value of 0. Signals are similar to observables but are more lightweight and simple to use in specific scenarios.
 
+  // Converting Signals to Observables:
+  clickCount$ = toObservable(this.clickCount);
+
+  // Converting Observables to Signals:
+  interval$ = interval(1000);
+  intervalSignal = toSignal(this.interval$, {initialValue: 0});
+
   private destroyRef = inject(DestroyRef);
   // The inject function is used to inject a dependency, in this case, DestroyRef, which is used to help manage cleanup when a component is destroyed. It is particularly useful for managing resources like subscriptions or event listeners.
 
   constructor() {
-    effect(() => {  // effect function automatically runs logic whenever the value of a signal changes
-      console.log(`Clicked button ${this.clickCount()} times.`)
-    });
+    // effect(() => {  // effect function automatically runs logic whenever the value of a signal changes
+    //   console.log(`Clicked button ${this.clickCount()} times.`)
+    // });
     // Every time the clickCount signal is updated, the effect will be triggered and the new value of clickCount will be logged to the console: Clicked button X times.
     // This effect will log the updated click count each time clickCount changes due to the onClick() method.
   }
 
   ngOnInit() {  // The ngOnInit() method will be called when the component is initialized, which is the appropriate place to perform observable subscriptions and other initialization tasks.
-    const subscription = interval(1000).pipe(
-      // RxJS map operator
-      map((val) => val * 2)
-    ).subscribe({
-      next: (val) => console.log(val)
-    });
+    // const subscription = interval(1000).pipe(
+    //   // RxJS map operator
+    //   map((val) => val * 2)
+    // ).subscribe({
+    //   next: (val) => console.log(val)
+    // });
     // interval(1000): This is an RxJS operator that emits a number every 1000 milliseconds (1 second). It starts emitting values like 0, 1, 2, 3, ... at a 1-second interval.
     // .pipe(...): The pipe method is used to chain one or more operators to the observable. In this case, the map operator is applied to the observable stream.
     // map((val) => val * 2): The map operator transforms the emitted values. In this case, each emitted value (val) is multiplied by 2. For example, the values 0, 1, 2, 3, ... will be transformed to 0, 2, 4, 6, ....
@@ -38,6 +46,11 @@ export class AppComponent implements OnInit {
       subscription.unsubscribe();
       // When the component is destroyed, the onDestroy method is called. It triggers the cleanup logic, which in this case calls unsubscribe on the subscription. 
       // This ensures that the interval observable stops emitting values and the subscription is properly disposed of to prevent memory leaks.
+    });
+
+    // Converting Signals to Observables:
+    const subscription = this.clickCount$.subscribe({
+      next: (val) => console.log(`Clicked button ${this.clickCount()} times.`)
     });
   }
 
@@ -70,3 +83,11 @@ export class AppComponent implements OnInit {
 // BehaviorSubject, ReplaySubject, and AsyncSubject are types of subjects that have different behaviors regarding how they store and emit values.
 
 // A scheduler in RxJS determines when the subscription should receive values. Schedulers allow you to control the timing of emissions, making it possible to delay, throttle, or prioritize tasks within the observable stream.
+
+
+// Signals vs Observables:
+// Observables -> Values over time
+//             -> Great for managing events & streamed data
+// Signals -> Values in a container
+//         -> Great for managing application state
+// In practice, signals are better for local, simple reactive state within Angular, while observables shine in handling asynchronous operations and streams of data.
