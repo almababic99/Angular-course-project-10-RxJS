@@ -1,6 +1,6 @@
 import { Component, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { interval, map } from 'rxjs';
+import { interval, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-root',  // This is the selector used in the HTML template to insert this component into the DOM. The component can be used like <app-root></app-root> in the HTML.
@@ -16,6 +16,21 @@ export class AppComponent implements OnInit {
   // Converting Observables to Signals:
   interval$ = interval(1000);
   intervalSignal = toSignal(this.interval$, {initialValue: 0});
+
+  // Creating custom Observable:
+  customInterval$ = new Observable((subscriber) => {  // we are using this inside o ngOnInit
+    let timesExecuted = 0;
+    const interval = setInterval(() => {
+      if (timesExecuted > 3) {
+        clearInterval(interval);
+        subscriber.complete();
+        return;
+      }
+      console.log('Emitting new value...')
+      subscriber.next({message: 'New value'});
+      timesExecuted++;
+    }, 2000);
+  });
 
   private destroyRef = inject(DestroyRef);
   // The inject function is used to inject a dependency, in this case, DestroyRef, which is used to help manage cleanup when a component is destroyed. It is particularly useful for managing resources like subscriptions or event listeners.
@@ -42,15 +57,21 @@ export class AppComponent implements OnInit {
     // In this case, the emitted value is logged to the console using console.log(val).
     // So, every second, the console will log a number starting from 0 and incrementing by 2 each second: 0, 2, 4, 6, 8, ....
 
+    // Using custom Observable:
+    this.customInterval$.subscribe({
+      next: (val) => console.log(val),
+      complete: () => console.log('COMPLETED')
+    });
+    
+    // Converting Signals to Observables:
+    const subscription = this.clickCount$.subscribe({
+      next: (val) => console.log(`Clicked button ${this.clickCount()} times.`)
+    });
+
     this.destroyRef.onDestroy(() => {  // This is used to automatically handle the cleanup of the observable subscription when the component is destroyed.
       subscription.unsubscribe();
       // When the component is destroyed, the onDestroy method is called. It triggers the cleanup logic, which in this case calls unsubscribe on the subscription. 
       // This ensures that the interval observable stops emitting values and the subscription is properly disposed of to prevent memory leaks.
-    });
-
-    // Converting Signals to Observables:
-    const subscription = this.clickCount$.subscribe({
-      next: (val) => console.log(`Clicked button ${this.clickCount()} times.`)
     });
   }
 
