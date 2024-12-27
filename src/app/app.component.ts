@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { interval, map } from 'rxjs';
 
 @Component({
@@ -7,8 +7,18 @@ import { interval, map } from 'rxjs';
   templateUrl: './app.component.html'  // This points to the external HTML file that defines the component’s view (template).
 })
 export class AppComponent implements OnInit {
+  clickCount = signal(0);  //  a signal initialized with a value of 0. Signals are similar to observables but are more lightweight and simple to use in specific scenarios.
+
   private destroyRef = inject(DestroyRef);
   // The inject function is used to inject a dependency, in this case, DestroyRef, which is used to help manage cleanup when a component is destroyed. It is particularly useful for managing resources like subscriptions or event listeners.
+
+  constructor() {
+    effect(() => {  // effect function automatically runs logic whenever the value of a signal changes
+      console.log(`Clicked button ${this.clickCount()} times.`)
+    });
+    // Every time the clickCount signal is updated, the effect will be triggered and the new value of clickCount will be logged to the console: Clicked button X times.
+    // This effect will log the updated click count each time clickCount changes due to the onClick() method.
+  }
 
   ngOnInit() {  // The ngOnInit() method will be called when the component is initialized, which is the appropriate place to perform observable subscriptions and other initialization tasks.
     const subscription = interval(1000).pipe(
@@ -29,6 +39,11 @@ export class AppComponent implements OnInit {
       // When the component is destroyed, the onDestroy method is called. It triggers the cleanup logic, which in this case calls unsubscribe on the subscription. 
       // This ensures that the interval observable stops emitting values and the subscription is properly disposed of to prevent memory leaks.
     });
+  }
+
+  onClick() {  // when the button in app.component.html is clicked onClick function is called
+    this.clickCount.update(prevCount => prevCount + 1);
+    // clickCount.update() is used to update the state of the clickCount signal, incrementing it by 1. This triggers the effect function to log the updated count to the console.
   }
 }
 
