@@ -17,19 +17,19 @@ export class AppComponent implements OnInit {
   interval$ = interval(1000);
   intervalSignal = toSignal(this.interval$, {initialValue: 0});
 
-  // Creating custom Observable:
+  // Creating custom Observable that emits a message every 2 seconds for a total of 4 times, then completes.
   customInterval$ = new Observable((subscriber) => {  // we are using this inside o ngOnInit
     let timesExecuted = 0;
     const interval = setInterval(() => {
       if (timesExecuted > 3) {
-        clearInterval(interval);
-        subscriber.complete();
+        clearInterval(interval);  // Stop emitting after 4 times.
+        subscriber.complete();   // Complete the observable after 4 emissions.
         return;
       }
       console.log('Emitting new value...')
-      subscriber.next({message: 'New value'});
+      subscriber.next({message: 'New value'});   // Emit a value to subscribers.
       timesExecuted++;
-    }, 2000);
+    }, 2000);  // Emit every 2 seconds.
   });
 
   private destroyRef = inject(DestroyRef);
@@ -59,13 +59,13 @@ export class AppComponent implements OnInit {
 
     // Using custom Observable:
     this.customInterval$.subscribe({
-      next: (val) => console.log(val),
-      complete: () => console.log('COMPLETED')
+      next: (val) => console.log(val),   // Log each emitted value from the observable.
+      complete: () => console.log('COMPLETED')   // Log when the observable completes.
     });
     
     // Converting Signals to Observables:
     const subscription = this.clickCount$.subscribe({
-      next: (val) => console.log(`Clicked button ${this.clickCount()} times.`)
+      next: (val) => console.log(`Clicked button ${this.clickCount()} times.`)  // Log the number of times the button has been clicked.
     });
 
     this.destroyRef.onDestroy(() => {  // This is used to automatically handle the cleanup of the observable subscription when the component is destroyed.
